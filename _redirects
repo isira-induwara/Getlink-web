@@ -1,0 +1,3 @@
+/f/image/* https://res.cloudinary.com/drk5ror9w/image/upload/:splat  200
+/f/video/* https://res.cloudinary.com/drk5ror9w/video/upload/:splat  200
+/f/raw/* https://res.cloudinary.com/drk5ror9w/raw/upload/:splat    200
