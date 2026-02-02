@@ -3,262 +3,307 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SL Cloud Pro - Next-Gen Link Generator</title>
+    <title>SL CLOUD PRO - Ultimate Hybrid Edition</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
     <style>
         body {
             font-family: 'Plus Jakarta Sans', sans-serif;
-            background-color: #0f172a;
+            background-color: #020617;
             background-image: 
-                radial-gradient(circle at 10% 20%, rgba(59, 130, 246, 0.1) 0%, transparent 40%),
-                radial-gradient(circle at 90% 80%, rgba(16, 185, 129, 0.1) 0%, transparent 40%);
+                radial-gradient(circle at 0% 0%, rgba(59, 130, 246, 0.1) 0%, transparent 35%),
+                radial-gradient(circle at 100% 100%, rgba(16, 185, 129, 0.1) 0%, transparent 35%);
             color: #f8fafc;
             min-height: 100vh;
         }
-        .card-light { background-color: #f8fafc; color: #1e293b; box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.3); border-radius: 1.5rem; }
-        .card-dark { background-color: #1e293b; border: 1px solid #334155; border-radius: 1.5rem; }
-        .drop-zone { border: 2px dashed #475569; transition: all 0.3s ease; }
-        .drop-zone:hover { border-color: #10b981; background-color: #1e293b; }
-        .footer-card { background-color: #f1f5f9; color: #334155; border-radius: 2rem; transition: transform 0.3s ease; }
-        .footer-card:hover { transform: translateY(-5px); }
-        .progress-gradient { background: linear-gradient(90deg, #3b82f6, #10b981); }
+
+        /* --- LOADING SCREEN --- */
+        #loader-overlay {
+            position: fixed; inset: 0; background: #020617;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            z-index: 10000; transition: opacity 0.8s ease, visibility 0.8s ease;
+        }
+        body.loaded #loader-overlay { opacity: 0; visibility: hidden; }
+
+        .loader-logo {
+            width: 120px; filter: drop-shadow(0 0 20px rgba(59, 130, 246, 0.5));
+            animation: float 3s ease-in-out infinite;
+        }
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-15px); } }
+
+        /* --- TOAST NOTIFICATION --- */
+        #toast {
+            position: fixed; top: -100px; left: 50%; transform: translateX(-50%);
+            background: #10b981; color: white; padding: 12px 32px; border-radius: 50px;
+            font-weight: 800; font-size: 13px; letter-spacing: 1px;
+            transition: 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            z-index: 2000; box-shadow: 0 10px 30px rgba(16, 185, 129, 0.4);
+        }
+        #toast.show { top: 30px; }
+
+        /* --- NEON GLOW BOX --- */
+        .drop-zone { border: 2px dashed #334155; transition: all 0.4s ease; }
+        .drop-zone.drag-active {
+            border-color: #10b981; background: rgba(16, 185, 129, 0.05);
+            box-shadow: 0 0 40px rgba(16, 185, 129, 0.2), inset 0 0 20px rgba(16, 185, 129, 0.1);
+        }
+
+        .glass-card {
+            background: rgba(30, 41, 59, 0.5); backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 2.5rem;
+        }
+
+        /* PROGRESS ANIMATION */
+        .progress-bar-fill { transition: width 0.4s ease, background-color 0.8s ease; }
+
+        .card-light { background: #f8fafc; color: #1e293b; border-radius: 2rem; }
+        .footer-card { background: #f1f5f9; color: #334155; border-radius: 1.5rem; transition: 0.3s; }
+
+        #qrModal {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.9);
+            display: none; justify-content: center; align-items: center; z-index: 1000;
+            backdrop-filter: blur(10px);
+        }
     </style>
 </head>
-<body class="py-10 px-4 md:px-8">
+<body class="py-8 px-4 md:px-12">
 
-    <div class="max-w-6xl mx-auto">
-        <header class="text-center mb-12">
-            <h1 class="text-5xl md:text-6xl font-extrabold tracking-tight mb-2">
-                <span class="text-blue-500">SL CLOUD</span> <span class="text-emerald-400">PRO</span>
-            </h1>
-            <p class="text-slate-400 text-lg font-medium">Next-Gen Direct Link Generator</p>
+    <div id="toast">LINK COPIED TO CLIPBOARD!</div>
+
+    <div id="loader-overlay">
+        <img src="https://r.jina.ai/i/068ec944f31c4488b398dfa5a6cf6dfd" class="loader-logo" alt="Logo">
+        <div class="mt-8 h-1 w-48 bg-slate-800 rounded-full overflow-hidden">
+            <div class="h-full bg-blue-500 animate-[progress_2s_infinite] relative w-1/2"></div>
+        </div>
+        <p class="mt-4 text-[10px] tracking-[0.4em] text-blue-400 font-bold uppercase">System Initializing</p>
+    </div>
+
+    <div id="qrModal" onclick="this.style.display='none'">
+        <div class="bg-white p-10 rounded-[3rem] shadow-2xl text-center" onclick="event.stopPropagation()">
+            <div id="qrcode" class="mb-6"></div>
+            <p class="text-black font-black text-sm tracking-widest mb-4">SCAN TO DOWNLOAD</p>
+            <button onclick="document.getElementById('qrModal').style.display='none'" class="w-full py-3 bg-slate-100 text-slate-500 rounded-2xl text-[10px] font-black tracking-widest uppercase hover:bg-slate-200 transition-all">CLOSE</button>
+        </div>
+    </div>
+
+    <div class="max-w-7xl mx-auto">
+        <header class="flex flex-col lg:flex-row justify-between items-center mb-16 gap-6">
+            <div class="text-center lg:text-left">
+                <h1 class="text-5xl md:text-7xl font-black tracking-tighter italic leading-none">
+                    <span class="text-blue-500">SL CLOUD</span> <span class="text-emerald-400">PRO</span>
+                </h1>
+                <p class="text-slate-400 font-semibold mt-2 tracking-wide uppercase text-xs">Next-Gen Asset Delivery & Link Generation</p>
+            </div>
+            <div class="relative group">
+                <input type="text" id="searchInput" oninput="displaySavedFiles()" placeholder="Search your vault..." class="bg-slate-900 border border-slate-700 px-8 py-4 rounded-full text-sm focus:outline-none focus:border-blue-500 w-80 transition-all shadow-2xl">
+                <span class="absolute right-6 top-4.5 text-slate-500">🔍</span>
+            </div>
         </header>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
-            <div class="card-light p-8 relative overflow-hidden">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-20">
+            <div class="lg:col-span-3 card-light p-10 relative overflow-hidden flex flex-col justify-between shadow-2xl">
                 <div class="absolute top-0 left-0 w-2 h-full bg-emerald-500"></div>
-                <h3 class="text-xl font-bold mb-4 text-slate-800">Upload Notice</h3>
-                <div class="bg-slate-200 p-4 rounded-xl mb-4">
-                    <p class="text-sm text-slate-600 font-medium leading-relaxed">
-                        Max file size: <span class="text-emerald-600 font-bold">25MB</span>. Cloudinary supports Images, Videos, & Documents.
+                <div>
+                    <h3 class="text-2xl font-black mb-4 italic uppercase">Info</h3>
+                    <p class="text-sm text-slate-500 font-medium leading-relaxed">
+                        Securely upload assets to Cloudinary. Max size <span class="text-emerald-600 font-bold">25MB</span>. Automatic direct link generation enabled.
                     </p>
                 </div>
-                <p class="text-xs text-slate-500">No Credit Card required. Fast & Secure.</p>
+                <div class="mt-8 pt-6 border-t border-slate-100">
+                    <p class="text-[9px] font-black text-slate-400 uppercase tracking-[0.3em]">Powered by Ves Invasion</p>
+                </div>
             </div>
 
-            <div id="dropZone" class="card-dark drop-zone p-8 flex flex-col items-center justify-center text-center cursor-pointer group relative">
-                <input type="file" id="fileInput" class="hidden">
-                <div class="w-14 h-14 bg-blue-600 rounded-xl flex items-center justify-center mb-4 shadow-lg shadow-blue-500/20 group-hover:bg-emerald-500 transition-colors">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+            <div id="dropZone" class="lg:col-span-6 glass-card p-16 flex flex-col items-center justify-center text-center cursor-pointer drop-zone group">
+                <input type="file" id="fileInput" class="hidden" multiple>
+                <div class="w-24 h-24 bg-blue-600 rounded-[2rem] flex items-center justify-center mb-8 shadow-2xl group-hover:scale-110 group-hover:rotate-6 transition-all duration-500">
+                    <svg class="h-12 w-12 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                     </svg>
                 </div>
-                <h3 class="text-white font-bold text-lg">Select a File to Upload</h3>
-                <p class="text-slate-400 text-xs mt-1">to browse your storage</p>
+                <h3 class="text-3xl font-black mb-2">Drop Files Here</h3>
+                <p class="text-slate-500 font-bold text-sm tracking-wide">CLICK TO BROWSE LOCAL STORAGE</p>
             </div>
 
-            <div class="card-dark p-8 flex flex-col justify-between">
-                <div class="flex justify-between items-center mb-4 text-slate-300">
-                    <h3 class="font-bold">Upload Status</h3>
-                    <span id="statusIcon">⚡</span>
+            <div class="lg:col-span-3 glass-card p-8 flex flex-col border-l-4 border-blue-500">
+                <h3 class="text-[10px] font-black text-blue-400 uppercase tracking-[0.4em] mb-6">Live Pipeline</h3>
+                <div id="uploadList" class="space-y-4 overflow-y-auto max-h-[300px] custom-scrollbar pr-2">
+                    <div class="text-center py-12 opacity-20 italic text-sm">System Idle...</div>
                 </div>
-                
-                <div class="bg-slate-800 rounded-lg p-3 mb-4 border border-slate-700">
-                    <div class="flex justify-between items-center mb-1">
-                        <p id="pFileName" class="text-xs text-slate-400 truncate w-32">Ready</p>
-                        <span id="pPercent" class="text-emerald-400 text-xs font-bold">0%</span>
-                    </div>
-                    <div class="w-full bg-slate-700 h-2 rounded-full overflow-hidden">
-                        <div id="pBar" class="progress-gradient h-full w-0 transition-all duration-300"></div>
-                    </div>
-                </div>
-                <p id="uploadMsg" class="text-[10px] text-slate-500 text-center uppercase tracking-widest">Awaiting File Selection</p>
             </div>
         </div>
 
-        <div class="flex items-center gap-3 mb-6">
-            <div class="h-8 w-1.5 bg-emerald-500 rounded-full"></div>
-            <h2 class="text-2xl font-bold">Recent Uploads</h2>
-            <button onclick="clearHistory()" class="ml-auto text-xs bg-slate-800 hover:bg-red-900/30 text-slate-300 px-4 py-2 rounded-full border border-slate-700 transition">Clear History</button>
+        <div class="flex items-center justify-between mb-10">
+            <h2 class="text-3xl font-black italic flex items-center gap-4 text-white">
+                <span class="w-2 h-10 bg-emerald-500 rounded-full shadow-[0_0_20px_rgba(16,185,129,0.6)]"></span>
+                RECENT VAULT ASSETS
+            </h2>
+            <button onclick="clearHistory()" class="text-[10px] font-black tracking-[0.2em] text-red-500 hover:bg-red-500 hover:text-white px-6 py-3 rounded-full border-2 border-red-500/20 transition-all uppercase">Purge Database</button>
         </div>
 
-        <div id="recentUploads" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 mb-20"></div>
+        <div id="recentUploads" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-24"></div>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div class="footer-card p-8 shadow-xl">
-                <h4 class="text-2xl font-black text-blue-600 italic mb-4">VES INVASION</h4>
-                <p class="text-xs text-slate-500 font-medium leading-relaxed mb-6">Premium Cloud Solutions by Ves Invasion.</p>
-                <button class="bg-blue-600 text-white text-[10px] font-bold uppercase tracking-widest px-6 py-3 rounded-full">BGX.01 NOB</button>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div class="footer-card p-10 shadow-2xl border border-white/50">
+                <h4 class="text-3xl font-black text-blue-600 italic mb-4 uppercase">Ves Invasion</h4>
+                <p class="text-[11px] text-slate-500 font-bold leading-relaxed mb-8 uppercase tracking-tighter">Premium Cloud Solutions & Direct Link Engine.</p>
+                <div class="inline-block bg-slate-900 text-emerald-400 text-[10px] font-black uppercase tracking-[0.3em] px-8 py-3 rounded-full">BGX-01 PRO</div>
             </div>
-            <div class="footer-card p-8">
-                <h4 class="text-lg font-bold text-slate-800 mb-6">Services</h4>
-                <ul class="space-y-3 text-sm text-slate-600"><li>✓ Web Development</li><li>✓ Fast Hosting</li><li>✓ Cloud Storage</li></ul>
+            <div class="footer-card p-10 border border-white/50">
+                <h4 class="text-lg font-black text-slate-800 mb-6 uppercase italic">Global Reach</h4>
+                <ul class="space-y-4 text-xs font-bold text-slate-500 uppercase tracking-widest">
+                    <li class="flex items-center gap-2"><span class="w-1.5 h-1.5 bg-blue-500 rounded-full"></span> Cloud Infrastructure</li>
+                    <li class="flex items-center gap-2"><span class="w-1.5 h-1.5 bg-blue-500 rounded-full"></span> Secure API Node</li>
+                    <li class="flex items-center gap-2"><span class="w-1.5 h-1.5 bg-blue-500 rounded-full"></span> Direct Link Mesh</li>
+                </ul>
             </div>
-            <div class="footer-card p-8">
-                <h4 class="text-lg font-bold text-slate-800 mb-6">Get in Touch</h4>
-                <p class="text-sm text-slate-600">Contact us for custom web solutions.</p>
+            <div class="footer-card p-10 border border-white/50">
+                <h4 class="text-lg font-black text-slate-800 mb-6 uppercase italic">Technical Support</h4>
+                <p class="text-sm text-slate-500 font-medium leading-relaxed uppercase font-bold text-[11px]">Deploying custom mesh networks? Contact our lead architect for integration.</p>
             </div>
         </div>
     </div>
-<script>
-    // --- 1. CONFIGURATION (මෙතන ඔයාගේ විස්තර දාන්න) ---
-    const CLOUD_NAME = "drk5ror9w"; 
-    const UPLOAD_PRESET = "getlink"; 
 
-    // --- 2. DOM ELEMENTS ---
-    const fileInput = document.getElementById('fileInput');
-    const dropZone = document.getElementById('dropZone');
-    const pBar = document.getElementById('pBar');
-    const pPercent = document.getElementById('pPercent');
-    const pFileName = document.getElementById('pFileName');
-    const uploadMsg = document.getElementById('uploadMsg');
-    const recentUploadsContainer = document.getElementById('recentUploads');
+    <script>
+        const CLOUD_NAME = "drk5ror9w"; 
+        const UPLOAD_PRESET = "getlink"; 
 
-    // සයිට් එක Load වෙද්දී කලින් අප්ලෝඩ් කරපු දේවල් පෙන්වන්න
-    window.onload = displaySavedFiles;
-
-    // --- 3. EVENT LISTENERS ---
-    dropZone.addEventListener('click', () => fileInput.click());
-
-    fileInput.addEventListener('change', (e) => {
-        if (e.target.files.length > 0) {
-            handleUpload(e.target.files[0]);
-        }
-    });
-
-    // Drag & Drop පහසුකම
-    dropZone.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        dropZone.classList.add('border-emerald-500', 'bg-slate-800/50');
-    });
-
-    dropZone.addEventListener('dragleave', () => {
-        dropZone.classList.remove('border-emerald-500', 'bg-slate-800/50');
-    });
-
-    dropZone.addEventListener('drop', (e) => {
-        e.preventDefault();
-        dropZone.classList.remove('border-emerald-500', 'bg-slate-800/50');
-        if (e.dataTransfer.files.length > 0) {
-            handleUpload(e.dataTransfer.files[0]);
-        }
-    });
-
-    // --- 4. UPLOAD LOGIC ---
-    async function handleUpload(file) {
-        if (!file) return;
-
-        // UI එක සූදානම් කිරීම
-        pFileName.innerText = file.name;
-        uploadMsg.innerText = "Connecting to Cloud...";
-        pBar.style.width = '0%';
-        pPercent.innerText = '0%';
-
-        const formData = new FormData();
-        formData.append('file', file);
-        formData.append('upload_preset', UPLOAD_PRESET);
-
-        try {
-            const xhr = new XMLHttpRequest();
-            // 'auto' භාවිතා කිරීමෙන් ඕනෑම file type එකක් අප්ලෝඩ් කළ හැක
-            xhr.open('POST', `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/auto/upload`, true);
-
-            // Progress Bar එක යාවත්කාලීන කිරීම
-            xhr.upload.onprogress = (e) => {
-                if (e.lengthComputable) {
-                    const percent = Math.round((e.loaded / e.total) * 100);
-                    pBar.style.width = percent + '%';
-                    pPercent.innerText = percent + '%';
-                    uploadMsg.innerText = percent < 100 ? "Uploading..." : "Processing...";
-                }
-            };
-
-            xhr.onload = function() {
-                const data = JSON.parse(xhr.responseText);
-                
-                if (xhr.status === 200 && data.secure_url) {
-                    // Custom Domain Link එක සෑදීම
-                    // Resource type අනුව (image/video/raw) අපේ redirect පාර තෝරමු
-                    let resType = data.resource_type; 
-                    let fileExt = data.format ? "." + data.format : "";
-                    
-                    // මුල් Cloudinary ලින්ක් එක වෙනුවට අපේම ලින්ක් එක හැදීම
-                    const myCustomLink = window.location.origin + "/f/" + resType + "/" + data.public_id + fileExt;
-
-                    saveToLocal(file.name, myCustomLink);
-                    displaySavedFiles();
-                    
-                    uploadMsg.innerText = "Upload Successful!";
-                    pFileName.innerText = "Done!";
-                } else {
-                    console.error("Cloudinary Error:", data);
-                    alert("Upload Failed: " + (data.error ? data.error.message : "Unknown Error"));
-                    uploadMsg.innerText = "Error Occurred";
-                }
-            };
-
-            xhr.send(formData);
-
-        } catch (error) {
-            console.error("Network Error:", error);
-            alert("Network Error. Please try again.");
-        }
-    }
-
-    // --- 5. HISTORY & STORAGE FUNCTIONS ---
-    function saveToLocal(name, url) {
-        let files = JSON.parse(localStorage.getItem('slCloudHistory') || '[]');
-        files.unshift({
-            name: name,
-            url: url,
-            date: new Date().toLocaleDateString()
+        window.addEventListener('load', () => {
+            setTimeout(() => document.body.classList.add('loaded'), 1500);
+            displaySavedFiles();
         });
-        // අයිතම 10කට වඩා තිබේ නම් පරණ ඒවා අයින් කරන්න (Optional)
-        if(files.length > 20) files.pop(); 
-        localStorage.setItem('slCloudHistory', JSON.stringify(files));
-    }
 
-    function displaySavedFiles() {
-        let files = JSON.parse(localStorage.getItem('slCloudHistory') || '[]');
+        const fileInput = document.getElementById('fileInput');
+        const dropZone = document.getElementById('dropZone');
+
+        dropZone.onclick = () => fileInput.click();
+        fileInput.onchange = (e) => handleFiles(e.target.files);
+
+        ['dragenter', 'dragover'].forEach(n => dropZone.addEventListener(n, e => { e.preventDefault(); dropZone.classList.add('drag-active'); }));
+        ['dragleave', 'drop'].forEach(n => dropZone.addEventListener(n, e => { e.preventDefault(); dropZone.classList.remove('drag-active'); }));
         
-        if (files.length === 0) {
-            recentUploadsContainer.innerHTML = `<p class="text-slate-600 text-sm col-span-full text-center italic">No recent uploads found.</p>`;
-            return;
+        dropZone.ondrop = (e) => handleFiles(e.dataTransfer.files);
+
+        function handleFiles(files) {
+            Array.from(files).forEach(file => {
+                if(file.size > 25 * 1024 * 1024) return showToast("FILE TOO LARGE (MAX 25MB)", true);
+                uploadFile(file);
+            });
         }
 
-        recentUploadsContainer.innerHTML = files.map(f => `
-            <div class="bg-slate-800/50 backdrop-blur-md border border-slate-700 p-5 rounded-2xl hover:border-emerald-500/50 transition-all group">
-                <div class="flex items-center gap-3 mb-4">
-                    <div class="w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-400 rounded-lg flex items-center justify-center text-white font-bold text-[10px] shadow-lg">FILE</div>
-                    <div class="overflow-hidden">
-                        <h5 class="text-white text-sm font-bold truncate pr-2">${f.name}</h5>
-                        <p class="text-[10px] text-slate-400 font-mono">${f.date}</p>
+        function uploadFile(file) {
+            const id = Math.random().toString(36).substr(2, 5);
+            const list = document.getElementById('uploadList');
+            if(list.innerText.includes('Idle')) list.innerHTML = '';
+
+            const item = document.createElement('div');
+            item.className = 'bg-slate-900/80 p-5 rounded-[1.5rem] border border-slate-800 shadow-xl';
+            item.innerHTML = `
+                <div class="flex justify-between text-[9px] font-black mb-3 uppercase tracking-widest text-slate-400">
+                    <span class="truncate w-32">${file.name}</span>
+                    <span id="p-${id}">0%</span>
+                </div>
+                <div class="h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                    <div id="b-${id}" class="h-full bg-blue-600 progress-bar-fill w-0"></div>
+                </div>
+            `;
+            list.prepend(item);
+
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('upload_preset', UPLOAD_PRESET);
+
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/auto/upload`);
+
+            xhr.upload.onprogress = (e) => {
+                const perc = Math.round((e.loaded / e.total) * 100);
+                const bar = document.getElementById(`b-${id}`);
+                bar.style.width = perc + '%';
+                document.getElementById(`p-${id}`).innerText = perc + '%';
+                
+                // Color Transition: Blue -> Emerald
+                if(perc > 50) bar.style.backgroundColor = '#3b82f6';
+                if(perc > 90) bar.style.backgroundColor = '#10b981';
+            };
+
+            xhr.onload = () => {
+                const res = JSON.parse(xhr.responseText);
+                saveToLocal(file.name, res.secure_url, res.resource_type, res.thumbnail_url || res.secure_url);
+                item.style.borderColor = '#10b981';
+                setTimeout(() => { item.remove(); displaySavedFiles(); }, 1000);
+            };
+            xhr.send(formData);
+        }
+
+        function saveToLocal(name, url, type, thumb) {
+            let history = JSON.parse(localStorage.getItem('sl_cloud_vfinal') || '[]');
+            history.unshift({ name, url, type, thumb, date: new Date().toLocaleTimeString() });
+            localStorage.setItem('sl_cloud_vfinal', JSON.stringify(history.slice(0, 50)));
+        }
+
+        function displaySavedFiles() {
+            const query = document.getElementById('searchInput').value.toLowerCase();
+            const container = document.getElementById('recentUploads');
+            let history = JSON.parse(localStorage.getItem('sl_cloud_vfinal') || '[]');
+
+            container.innerHTML = history.filter(f => f.name.toLowerCase().includes(query)).map(f => `
+                <div class="glass-card p-8 group hover:border-blue-500/50 transition-all duration-500 hover:translate-y-[-5px]">
+                    <div class="flex items-center gap-5 mb-8">
+                        <div class="w-16 h-16 rounded-[1.2rem] bg-slate-900 flex items-center justify-center border border-slate-800 overflow-hidden shadow-2xl">
+                            ${f.type === 'image' ? `<img src="${f.thumb}" class="w-full h-full object-cover">` : 
+                              `<span class="text-[10px] font-black text-blue-500 italic uppercase">${f.type}</span>`}
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <h4 class="text-sm font-black truncate text-white uppercase tracking-tight">${f.name}</h4>
+                            <p class="text-[9px] text-slate-500 font-black mt-1 uppercase tracking-[0.1em]">${f.date}</p>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-3 gap-3">
+                        <button onclick="copyLink('${f.url}', this)" class="bg-emerald-500 text-slate-950 text-[9px] font-black py-3 rounded-xl hover:bg-white transition-all uppercase tracking-tighter">Copy</button>
+                        <a href="${f.url}" target="_blank" class="bg-blue-600 text-white text-[9px] font-black py-3 rounded-xl flex items-center justify-center hover:bg-blue-400 transition-all uppercase tracking-tighter">Open</a>
+                        <button onclick="showQR('${f.url}')" class="bg-slate-800 text-white text-[9px] font-black py-3 rounded-xl hover:bg-slate-700 transition-all uppercase">QR</button>
                     </div>
                 </div>
-                <div class="flex gap-2">
-                    <button onclick="copyLink('${f.url}')" class="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white py-2 rounded-lg text-xs font-bold transition shadow-lg shadow-emerald-500/20">COPY LINK</button>
-                    <button onclick="window.open('${f.url}')" class="px-3 bg-slate-700 hover:bg-slate-600 text-white rounded-lg text-xs font-bold transition">OPEN</button>
-                </div>
-            </div>
-        `).join('');
-    }
-
-    function copyLink(url) {
-        navigator.clipboard.writeText(url).then(() => {
-            alert("Link Copied to Clipboard!");
-        }).catch(err => {
-            console.error("Copy failed", err);
-        });
-    }
-
-    function clearHistory() {
-        if (confirm("Are you sure you want to clear your upload history?")) {
-            localStorage.removeItem('slCloudHistory');
-            displaySavedFiles();
+            `).join('');
         }
-    }
-</script>
 
+        function copyLink(url, btn) {
+            navigator.clipboard.writeText(url).then(() => {
+                showToast("LINK COPIED SUCCESSFULLY!");
+                const oldText = btn.innerText;
+                btn.innerText = "DONE!";
+                btn.style.backgroundColor = "white";
+                setTimeout(() => {
+                    btn.innerText = oldText;
+                    btn.style.backgroundColor = "";
+                }, 2000);
+            });
+        }
+
+        function showToast(msg, isError = false) {
+            const t = document.getElementById('toast');
+            t.innerText = msg;
+            t.style.background = isError ? "#ef4444" : "#10b981";
+            t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 3000);
+        }
+
+        function showQR(url) {
+            const qrBox = document.getElementById('qrcode');
+            qrBox.innerHTML = "";
+            new QRCode(qrBox, { text: url, width: 200, height: 200, colorDark: "#000000", colorLight: "#ffffff" });
+            document.getElementById('qrModal').style.display = 'flex';
+        }
+
+        function clearHistory() {
+            if(confirm("DANGER: This will wipe your local history. Continue?")) {
+                localStorage.removeItem('sl_cloud_vfinal');
+                displaySavedFiles();
+            }
+        }
+    </script>
 </body>
-                    </html>
+                </html>
