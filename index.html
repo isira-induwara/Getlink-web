@@ -23,6 +23,7 @@
         .footer-card { background-color: #f1f5f9; color: #334155; border-radius: 2rem; transition: transform 0.3s ease; }
         .footer-card:hover { transform: translateY(-5px); }
         .progress-gradient { background: linear-gradient(90deg, #3b82f6, #10b981); }
+        .hidden { display: none; }
     </style>
 </head>
 <body class="py-10 px-4 md:px-8">
@@ -41,10 +42,10 @@
                 <h3 class="text-xl font-bold mb-4 text-slate-800">Upload Notice</h3>
                 <div class="bg-slate-200 p-4 rounded-xl mb-4">
                     <p class="text-sm text-slate-600 font-medium leading-relaxed">
-                        Max file size: <span class="text-emerald-600 font-bold">25MB</span>. Cloudinary supports Images, Videos, & Documents.
+                        Max size: <span class="text-emerald-600 font-bold">25MB</span>. Supports PDF, Images, Video & ZIP.
                     </p>
                 </div>
-                <p class="text-xs text-slate-500">No Credit Card required. Fast & Secure.</p>
+                <p class="text-xs text-slate-500 uppercase font-bold">Ves Invasion Cloud</p>
             </div>
 
             <div id="dropZone" class="card-dark drop-zone p-8 flex flex-col items-center justify-center text-center cursor-pointer group relative">
@@ -54,8 +55,8 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
                     </svg>
                 </div>
-                <h3 class="text-white font-bold text-lg">Select a File to Upload</h3>
-                <p class="text-slate-400 text-xs mt-1">to browse your storage</p>
+                <h3 class="text-white font-bold text-lg">Select File</h3>
+                <p class="text-slate-400 text-xs mt-1">Direct Link will be generated</p>
             </div>
 
             <div class="card-dark p-8 flex flex-col justify-between">
@@ -63,7 +64,6 @@
                     <h3 class="font-bold">Upload Status</h3>
                     <span id="statusIcon">⚡</span>
                 </div>
-                
                 <div class="bg-slate-800 rounded-lg p-3 mb-4 border border-slate-700">
                     <div class="flex justify-between items-center mb-1">
                         <p id="pFileName" class="text-xs text-slate-400 truncate w-32">Ready</p>
@@ -73,40 +73,77 @@
                         <div id="pBar" class="progress-gradient h-full w-0 transition-all duration-300"></div>
                     </div>
                 </div>
-                <p id="uploadMsg" class="text-[10px] text-slate-500 text-center uppercase tracking-widest">Awaiting File Selection</p>
+                <p id="uploadMsg" class="text-[10px] text-slate-500 text-center uppercase tracking-widest italic">Awaiting Action</p>
+            </div>
+        </div>
+
+        <div id="autoViewer" class="hidden mb-16 bg-slate-900 border border-slate-700 rounded-[2rem] overflow-hidden shadow-2xl">
+            <div class="flex justify-between items-center p-6 bg-slate-800/40">
+                <h3 class="text-white font-bold text-sm">PDF UPLOAD PREVIEW</h3>
+                <button onclick="document.getElementById('autoViewer').classList.add('hidden')" class="text-xs text-slate-400 hover:text-white font-bold uppercase tracking-widest">Close</button>
+            </div>
+            <div class="w-full h-[500px]">
+                <iframe id="autoFrame" src="" class="w-full h-full border-none"></iframe>
             </div>
         </div>
 
         <div class="flex items-center gap-3 mb-6">
             <div class="h-8 w-1.5 bg-emerald-500 rounded-full"></div>
-            <h2 class="text-2xl font-bold">Recent Uploads</h2>
-            <button onclick="clearHistory()" class="ml-auto text-xs bg-slate-800 hover:bg-red-900/30 text-slate-300 px-4 py-2 rounded-full border border-slate-700 transition">Clear History</button>
+            <h2 class="text-2xl font-bold">Recent History</h2>
+            <button onclick="clearHistory()" class="ml-auto text-xs bg-slate-800 hover:bg-red-900/30 text-slate-300 px-4 py-2 rounded-full border border-slate-700 transition">Clear All</button>
         </div>
-
         <div id="recentUploads" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 mb-20"></div>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="max-w-6xl mx-auto mb-20">
+            <div class="card-dark p-8 border-t-4 border-t-blue-500">
+                <div class="mb-6">
+                    <h2 class="text-2xl font-bold text-white italic">PDF ONLINE VIEWER</h2>
+                    <p class="text-slate-400 text-[10px] uppercase tracking-widest mt-1">Paste any PDF URL below to view and download</p>
+                </div>
+
+                <div class="flex flex-col md:flex-row gap-3 mb-6">
+                    <input type="text" id="manualUrlInput" placeholder="https://example.com/document.pdf" 
+                        class="flex-1 bg-slate-950 border border-slate-700 rounded-2xl px-6 py-4 text-sm text-slate-200 focus:outline-none focus:border-emerald-500 transition">
+                    <button onclick="viewManualPdf()" 
+                        class="bg-blue-600 hover:bg-emerald-500 text-white font-black px-10 py-4 rounded-2xl transition-all shadow-lg shadow-blue-500/20 uppercase text-xs tracking-wider">
+                        VIEW PDF
+                    </button>
+                </div>
+
+                <div id="manualViewerBox" class="hidden animate-in fade-in duration-500">
+                    <div class="flex justify-between items-center mb-4 bg-slate-800 p-4 rounded-xl border border-slate-700">
+                        <span class="text-[10px] font-bold text-emerald-400 tracking-widest">PDF TOOL ACTIVE</span>
+                        <a id="manualDownloadBtn" href="#" download class="text-[10px] bg-emerald-500 hover:bg-emerald-400 text-black px-5 py-2 rounded-lg font-black uppercase transition">DOWNLOAD PDF</a>
+                    </div>
+                    <div class="w-full h-[600px] bg-white rounded-2xl overflow-hidden shadow-inner">
+                        <iframe id="manualFrame" src="" class="w-full h-full border-none"></iframe>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-slate-800">
             <div class="footer-card p-8 shadow-xl">
                 <h4 class="text-2xl font-black text-blue-600 italic mb-4">VES INVASION</h4>
-                <p class="text-xs text-slate-500 font-medium leading-relaxed mb-6">Premium Cloud Solutions by Ves Invasion.</p>
-                <button class="bg-blue-600 text-white text-[10px] font-bold uppercase tracking-widest px-6 py-3 rounded-full">BGX.01 NOB</button>
+                <p class="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Premium Cloud Storage Solutions.</p>
             </div>
             <div class="footer-card p-8">
-                <h4 class="text-lg font-bold text-slate-800 mb-6">Services</h4>
-                <ul class="space-y-3 text-sm text-slate-600"><li>✓ Web Development</li><li>✓ Fast Hosting</li><li>✓ Cloud Storage</li></ul>
+                <h4 class="text-lg font-bold mb-4">Services</h4>
+                <ul class="text-xs space-y-2 opacity-70"><li>✓ Direct Link Generation</li><li>✓ Online PDF Viewer</li></ul>
             </div>
             <div class="footer-card p-8">
-                <h4 class="text-lg font-bold text-slate-800 mb-6">Get in Touch</h4>
-                <p class="text-sm text-slate-600">Contact us for custom web solutions.</p>
+                <h4 class="text-lg font-bold mb-4">Note</h4>
+                <p class="text-xs opacity-70">Files are stored securely on Cloudinary CDN.</p>
             </div>
         </div>
     </div>
+
 <script>
-    // --- 1. CONFIGURATION (මෙතන ඔයාගේ විස්තර දාන්න) ---
+    // --- CONFIG ---
     const CLOUD_NAME = "drk5ror9w"; 
     const UPLOAD_PRESET = "getlink"; 
 
-    // --- 2. DOM ELEMENTS ---
+    // --- ELEMENTS ---
     const fileInput = document.getElementById('fileInput');
     const dropZone = document.getElementById('dropZone');
     const pBar = document.getElementById('pBar');
@@ -115,150 +152,105 @@
     const uploadMsg = document.getElementById('uploadMsg');
     const recentUploadsContainer = document.getElementById('recentUploads');
 
-    // සයිට් එක Load වෙද්දී කලින් අප්ලෝඩ් කරපු දේවල් පෙන්වන්න
     window.onload = displaySavedFiles;
 
-    // --- 3. EVENT LISTENERS ---
+    // --- UPLOAD PROCESS ---
     dropZone.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', (e) => handleUpload(e.target.files[0]));
 
-    fileInput.addEventListener('change', (e) => {
-        if (e.target.files.length > 0) {
-            handleUpload(e.target.files[0]);
-        }
-    });
-
-    // Drag & Drop පහසුකම
-    dropZone.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        dropZone.classList.add('border-emerald-500', 'bg-slate-800/50');
-    });
-
-    dropZone.addEventListener('dragleave', () => {
-        dropZone.classList.remove('border-emerald-500', 'bg-slate-800/50');
-    });
-
-    dropZone.addEventListener('drop', (e) => {
-        e.preventDefault();
-        dropZone.classList.remove('border-emerald-500', 'bg-slate-800/50');
-        if (e.dataTransfer.files.length > 0) {
-            handleUpload(e.dataTransfer.files[0]);
-        }
-    });
-
-    // --- 4. UPLOAD LOGIC ---
     async function handleUpload(file) {
         if (!file) return;
-
-        // UI එක සූදානම් කිරීම
         pFileName.innerText = file.name;
-        uploadMsg.innerText = "Connecting to Cloud...";
+        uploadMsg.innerText = "Connecting...";
         pBar.style.width = '0%';
-        pPercent.innerText = '0%';
-
+        
         const formData = new FormData();
         formData.append('file', file);
         formData.append('upload_preset', UPLOAD_PRESET);
 
         try {
             const xhr = new XMLHttpRequest();
-            // 'auto' භාවිතා කිරීමෙන් ඕනෑම file type එකක් අප්ලෝඩ් කළ හැක
             xhr.open('POST', `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/auto/upload`, true);
 
-            // Progress Bar එක යාවත්කාලීන කිරීම
             xhr.upload.onprogress = (e) => {
-                if (e.lengthComputable) {
-                    const percent = Math.round((e.loaded / e.total) * 100);
-                    pBar.style.width = percent + '%';
-                    pPercent.innerText = percent + '%';
-                    uploadMsg.innerText = percent < 100 ? "Uploading..." : "Processing...";
-                }
+                const percent = Math.round((e.loaded / e.total) * 100);
+                pBar.style.width = percent + '%';
+                pPercent.innerText = percent + '%';
+                uploadMsg.innerText = "Uploading to Cloud...";
             };
 
             xhr.onload = function() {
                 const data = JSON.parse(xhr.responseText);
-                
-                if (xhr.status === 200 && data.secure_url) {
-                    // Custom Domain Link එක සෑදීම
-                    // Resource type අනුව (image/video/raw) අපේ redirect පාර තෝරමු
-                    let resType = data.resource_type; 
-                    let fileExt = data.format ? "." + data.format : "";
-                    
-                    // මුල් Cloudinary ලින්ක් එක වෙනුවට අපේම ලින්ක් එක හැදීම
-                    const myCustomLink = window.location.origin + "/f/" + resType + "/" + data.public_id + fileExt;
+                if (xhr.status === 200) {
+                    const resType = data.resource_type;
+                    const fileExt = data.format ? "." + data.format : "";
+                    const myLink = window.location.origin + "/f/" + resType + "/" + data.public_id + fileExt;
 
-                    saveToLocal(file.name, myCustomLink);
+                    saveToLocal(file.name, myLink);
                     displaySavedFiles();
-                    
-                    uploadMsg.innerText = "Upload Successful!";
-                    pFileName.innerText = "Done!";
-                } else {
-                    console.error("Cloudinary Error:", data);
-                    alert("Upload Failed: " + (data.error ? data.error.message : "Unknown Error"));
-                    uploadMsg.innerText = "Error Occurred";
+
+                    // PDF නම් Auto View කරන්න
+                    if (file.type === 'application/pdf' || data.format === 'pdf') {
+                        document.getElementById('autoFrame').src = myLink;
+                        document.getElementById('autoViewer').classList.remove('hidden');
+                    }
+                    uploadMsg.innerText = "Upload Success!";
                 }
             };
-
             xhr.send(formData);
-
-        } catch (error) {
-            console.error("Network Error:", error);
-            alert("Network Error. Please try again.");
-        }
+        } catch (err) { alert("Upload Failed!"); }
     }
 
-    // --- 5. HISTORY & STORAGE FUNCTIONS ---
+    // --- MANUAL PDF VIEWER TOOL ---
+    function viewManualPdf() {
+        const url = document.getElementById('manualUrlInput').value.trim();
+        const box = document.getElementById('manualViewerBox');
+        const frame = document.getElementById('manualFrame');
+        const dlBtn = document.getElementById('manualDownloadBtn');
+
+        if (!url) { alert("Please paste a link first!"); return; }
+
+        frame.src = url;
+        dlBtn.href = url;
+        box.classList.remove('hidden');
+        box.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    // --- STORAGE & UI ---
     function saveToLocal(name, url) {
         let files = JSON.parse(localStorage.getItem('slCloudHistory') || '[]');
-        files.unshift({
-            name: name,
-            url: url,
-            date: new Date().toLocaleDateString()
-        });
-        // අයිතම 10කට වඩා තිබේ නම් පරණ ඒවා අයින් කරන්න (Optional)
-        if(files.length > 20) files.pop(); 
-        localStorage.setItem('slCloudHistory', JSON.stringify(files));
+        files.unshift({ name, url, date: new Date().toLocaleDateString() });
+        localStorage.setItem('slCloudHistory', JSON.stringify(files.slice(0, 15)));
     }
 
     function displaySavedFiles() {
         let files = JSON.parse(localStorage.getItem('slCloudHistory') || '[]');
-        
         if (files.length === 0) {
-            recentUploadsContainer.innerHTML = `<p class="text-slate-600 text-sm col-span-full text-center italic">No recent uploads found.</p>`;
+            recentUploadsContainer.innerHTML = `<p class="text-slate-600 text-sm col-span-full text-center">Empty History</p>`;
             return;
         }
-
         recentUploadsContainer.innerHTML = files.map(f => `
-            <div class="bg-slate-800/50 backdrop-blur-md border border-slate-700 p-5 rounded-2xl hover:border-emerald-500/50 transition-all group">
-                <div class="flex items-center gap-3 mb-4">
-                    <div class="w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-400 rounded-lg flex items-center justify-center text-white font-bold text-[10px] shadow-lg">FILE</div>
-                    <div class="overflow-hidden">
-                        <h5 class="text-white text-sm font-bold truncate pr-2">${f.name}</h5>
-                        <p class="text-[10px] text-slate-400 font-mono">${f.date}</p>
-                    </div>
-                </div>
+            <div class="card-dark p-5 border border-slate-800 transition-all hover:border-emerald-500/30 group">
+                <h5 class="text-white text-xs font-bold truncate mb-1">${f.name}</h5>
+                <p class="text-[9px] text-slate-500 mb-4">${f.date}</p>
                 <div class="flex gap-2">
-                    <button onclick="copyLink('${f.url}')" class="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white py-2 rounded-lg text-xs font-bold transition shadow-lg shadow-emerald-500/20">COPY LINK</button>
-                    <button onclick="window.open('${f.url}')" class="px-3 bg-slate-700 hover:bg-slate-600 text-white rounded-lg text-xs font-bold transition">OPEN</button>
+                    <button onclick="copyL('${f.url}')" class="flex-1 bg-emerald-500 text-black py-2 rounded-xl text-[10px] font-black uppercase">Copy</button>
+                    <button onclick="window.open('${f.url}')" class="px-4 bg-slate-700 text-white py-2 rounded-xl text-[10px] font-bold italic">Open</button>
                 </div>
             </div>
         `).join('');
     }
 
-    function copyLink(url) {
-        navigator.clipboard.writeText(url).then(() => {
-            alert("Link Copied to Clipboard!");
-        }).catch(err => {
-            console.error("Copy failed", err);
-        });
+    function copyL(url) {
+        navigator.clipboard.writeText(url).then(() => alert("Copied!"));
     }
 
     function clearHistory() {
-        if (confirm("Are you sure you want to clear your upload history?")) {
+        if (confirm("Clear all history?")) {
             localStorage.removeItem('slCloudHistory');
             displaySavedFiles();
         }
     }
 </script>
-
 </body>
-  </html>
+    </html>
