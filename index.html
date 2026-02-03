@@ -144,7 +144,22 @@
         </div>
 
         <div id="recentUploads" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-24"></div>
+        
 
+<div class="glass-card p-8 mb-16 border-b-4 border-blue-500">
+            <h3 class="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-6 flex items-center gap-2">
+                <span class="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></span> Direct Asset Downloader
+            </h3>
+            <div class="flex flex-col md:flex-row gap-4">
+                <input type="text" id="directDownloadUrl" placeholder="Paste link here (Cloudinary, Drive, etc.)..." 
+                    class="flex-1 bg-slate-950 border border-slate-700 px-6 py-4 rounded-2xl text-sm focus:border-blue-500 outline-none text-white">
+                <button id="dlBtn" onclick="directDownload()" 
+                    class="bg-blue-600 hover:bg-white hover:text-black font-black px-10 py-4 rounded-2xl transition-all uppercase text-xs flex items-center justify-center gap-3">
+                    <span id="dlBtnText">Download Now</span>
+                </button>
+            </div>
+        </div>
+        
         <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div class="footer-card p-10 shadow-2xl border border-white/50">
                 <h4 class="text-3xl font-black text-blue-600 italic mb-4 uppercase">Ves Invasion</h4>
@@ -269,7 +284,30 @@
                 </div>
             `).join('');
         }
+        
+// --- Direct Download ---
+        async function directDownload() {
+            const url = document.getElementById('directDownloadUrl').value.trim();
+            const btn = document.getElementById('dlBtnText');
+            if (!url) return showToast("ENTER A VALID URL", true);
 
+            btn.innerHTML = `<div class="spinner"></div>`;
+            try {
+                const response = await fetch(url);
+                const blob = await response.blob();
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = url.split('/').pop() || "SL-Cloud-Asset";
+                link.click();
+                showToast("DOWNLOAD STARTED!");
+            } catch (e) {
+                window.open(url, '_blank'); // Fallback to browser download
+                showToast("STARTING DOWNLOAD...");
+            }
+            btn.innerText = "Download Now";
+            document.getElementById('directDownloadUrl').value = "";
+        }
+        
         function copyLink(url, btn) {
             navigator.clipboard.writeText(url).then(() => {
                 showToast("LINK COPIED SUCCESSFULLY!");
@@ -306,4 +344,4 @@
         }
     </script>
 </body>
-                </html>
+</html>
