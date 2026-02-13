@@ -1,20 +1,18 @@
 {
-  "short_name": "CloudLink",
-  "name": "Cloud Link - File Share",
+  "short_name": "SLCloudPro",
+  "name": "SL CLOUD PRO - Hybrid Edition",
+  "description": "Next-Gen Asset Delivery & Link Generation",
   "icons": [
     {
-      "src": "icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png"
-    },
-    {
-      "src": "icon-512.png",
+      "src": "https://res.cloudinary.com/drk5ror9w/image/upload/v1770977222/cmif7k0lg1ddxqqzacvv.jpg",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/jpeg",
+      "purpose": "any maskable"
     }
   ],
-  "start_url": "/",
-  "background_color": "#ffffff",
+  "start_url": ".",
   "display": "standalone",
-  "theme_color": "#007bff"
+  "background_color": "#020617",
+  "theme_color": "#3b82f6",
+  "orientation": "portrait"
 }
