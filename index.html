@@ -89,18 +89,24 @@
     </div>
 
     <div class="max-w-7xl mx-auto">
-        <header class="flex flex-col lg:flex-row justify-between items-center mb-16 gap-6">
-            <div class="text-center lg:text-left">
-                <h1 class="text-5xl md:text-7xl font-black tracking-tighter italic leading-none">
-                    <span class="text-blue-500">SL CLOUD</span> <span class="text-emerald-400">PRO</span>
-                </h1>
-                <p class="text-slate-400 font-semibold mt-2 tracking-wide uppercase text-xs">Next-Gen Asset Delivery & Link Generation</p>
-            </div>
-            <div class="relative group">
-                <input type="text" id="searchInput" oninput="displaySavedFiles()" placeholder="Search your vault..." class="bg-slate-900 border border-slate-700 px-8 py-4 rounded-full text-sm focus:outline-none focus:border-blue-500 w-80 transition-all shadow-2xl">
-                <span class="absolute right-6 top-4.5 text-slate-500">🔍</span>
-            </div>
-        </header>
+<header class="flex flex-col lg:flex-row justify-between items-center mb-16 gap-6">
+    <div class="text-center lg:text-left">
+        <h1 class="text-5xl md:text-7xl font-black tracking-tighter italic leading-none">
+            <span class="text-blue-500">SL CLOUD</span> <span class="text-emerald-400">PRO</span>
+        </h1>
+        <p class="text-slate-400 font-semibold mt-2 tracking-wide uppercase text-xs">Next-Gen Asset Delivery & Link Generation</p>
+    </div>
+    
+    <div class="flex flex-col items-end gap-4"> <div class="relative group">
+            <input type="text" id="searchInput" oninput="displaySavedFiles()" placeholder="Search your vault..." class="bg-slate-900 border border-slate-700 px-8 py-4 rounded-full text-sm focus:outline-none focus:border-blue-500 w-80 transition-all shadow-2xl">
+            <span class="absolute right-6 top-4.5 text-slate-500">🔍</span>
+        </div>
+        
+        <button id="installBtn" style="display:none;" class="bg-emerald-500 hover:bg-white hover:text-black text-white px-6 py-2 rounded-full text-[10px] font-black tracking-widest uppercase transition-all shadow-lg animate-bounce">
+            INSTALL MOBILE APP
+        </button>
+    </div>
+</header>
 
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-20">
             <div class="lg:col-span-3 card-light p-10 relative overflow-hidden flex flex-col justify-between shadow-2xl">
