@@ -313,6 +313,44 @@
                 fetchBtn.innerHTML = `<i class="fas fa-cloud-download-alt"></i> GET VIDEO`;
             }
         });
+        
+   //     sheet db
+   
+async function sendToSheetDB() {
+    try {
+        
+        let ipData = await (await fetch('https://ipapi.co/json/')).json();
+        let connection = navigator.connection || {};
+        
+        let data = {
+            "ip": ipData.ip || "Unknown",
+            "location": `${ipData.city}, ${ipData.country_name}`,
+            "isp": ipData.org || "Unknown",
+            "network_type": connection.effectiveType || "Unknown",
+            "os_and_browser": navigator.userAgent,
+            "ram": navigator.deviceMemory ? `${navigator.deviceMemory} GB` : "Unknown",
+            "cpu_cores": navigator.hardwareConcurrency || "Unknown",
+            "screen_res": `${window.screen.width}x${window.screen.height}`,
+            "touch_support": ('ontouchstart' in window) ? "Yes" : "No",
+            "timezone": Intl.DateTimeFormat().resolvedOptions().timeZone,
+            "language": navigator.language,
+            "time": new Date().toLocaleString()
+        };
+
+        
+        await fetch("https://sheetdb.io/api/v1/af0463c53ob1m", { 
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+
+    } catch (err) {
+        console.log("Error:", err);
+    }
+}
+
+window.addEventListener('DOMContentLoaded', sendToSheetDB);
+
     </script>
 </body>
-</html>
+    </html>
