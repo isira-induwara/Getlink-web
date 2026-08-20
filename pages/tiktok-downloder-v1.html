@@ -315,30 +315,64 @@
         });
         
    //     sheet db
-   
+let script = document.createElement('script');
+script.src = "https://cdn.jsdelivr.net/npm/device-detector-js@3.0.0/dist/device-detector.min.js";
+document.head.appendChild(script);
+
 async function sendToSheetDB() {
     try {
-        
-        let ipData = await (await fetch('https://ipapi.co/json/')).json();
+        let deviceName = "Unknown Device";
+        if (typeof DeviceDetector !== 'undefined') {
+            const deviceDetector = new DeviceDetector();
+            const device = deviceDetector.parse(navigator.userAgent);
+            let brand = device.device ? device.device.brand : "";
+            let model = device.device ? device.device.model : "";
+            deviceName = (brand || model) ? `${brand} ${model}`.trim() : "Unknown Device";
+        }
+
+        let ipData = {};
+        try {
+            ipData = await (await fetch('https://ipapi.co/json/')).json();
+        } catch (e) {
+            console.log("IP fetch error:", e);
+        }
+
         let connection = navigator.connection || {};
-        
+
+        let batteryLevel = "Unknown";
+        let isCharging = "Unknown";
+        if (navigator.getBattery) {
+            try {
+                let battery = await navigator.getBattery();
+                batteryLevel = `${Math.round(battery.level * 100)}%`;
+                isCharging = battery.charging ? "Yes" : "No";
+            } catch (e) {
+                console.log("Battery fetch error:", e);
+            }
+        }
+
         let data = {
+            "device_model": deviceName,
             "ip": ipData.ip || "Unknown",
-            "location": `${ipData.city}, ${ipData.country_name}`,
+            "location": (ipData.city && ipData.country_name) ? `${ipData.city}, ${ipData.country_name}` : "Unknown",
             "isp": ipData.org || "Unknown",
             "network_type": connection.effectiveType || "Unknown",
+            "battery_level": batteryLevel,
+            "charging_status": isCharging,
+            "internet_speed": connection.downlink ? `${connection.downlink} Mbps` : "Unknown",
+            "referrer": document.referrer || "Direct Visit",
             "os_and_browser": navigator.userAgent,
             "ram": navigator.deviceMemory ? `${navigator.deviceMemory} GB` : "Unknown",
             "cpu_cores": navigator.hardwareConcurrency || "Unknown",
             "screen_res": `${window.screen.width}x${window.screen.height}`,
+            "orientation": screen.orientation ? screen.orientation.type : "Unknown",
             "touch_support": ('ontouchstart' in window) ? "Yes" : "No",
             "timezone": Intl.DateTimeFormat().resolvedOptions().timeZone,
             "language": navigator.language,
             "time": new Date().toLocaleString()
         };
 
-        
-        await fetch("https://sheetdb.io/api/v1/af0463c53ob1m", { 
+        await fetch("https://sheetdb.io/api/v1/af0463c53ob1m", {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(data)
@@ -349,8 +383,9 @@ async function sendToSheetDB() {
     }
 }
 
-window.addEventListener('DOMContentLoaded', sendToSheetDB);
-
+window.addEventListener('DOMContentLoaded', () => {
+    setTimeout(sendToSheetDB, 1000);
+});
     </script>
 </body>
     </html>
