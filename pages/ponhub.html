@@ -24,9 +24,8 @@
                 return;
             }
 
-            statusDiv.innerText = "Loading... කරුණාකර රැඳී සිටින්න.";
+            statusDiv.innerText = "Processing... කරුණාකර රැඳී සිටින්න.";
 
-            // Netlify Function එකට Request යැවීම
             fetch('/.netlify/functions/download', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -35,6 +34,37 @@
             .then(res => res.json())
             .then(data => {
                 let videoData = Array.isArray(data) ? data[0] : data;
+
+                if (videoData && videoData.urls && videoData.urls.length > 0) {
+                    let html = `<div style="margin-top: 20px;">`;
+                    if (videoData.pictureUrl) {
+                        html += `<img src="${videoData.pictureUrl}" style="max-width:300px; width:100%; border-radius:8px; margin-bottom:10px;" /><br>`;
+                    }
+                    html += `<h3>${videoData.meta ? videoData.meta.title : 'Video Links'}</h3>`;
+
+                    videoData.urls.forEach(item => {
+                        html += `
+                            <a href="${item.url}" target="_blank" style="display:inline-block; margin:5px; padding:10px 15px; background:#ff9900; color:#000; text-decoration:none; font-weight:bold; border-radius:5px;">
+                                Download ${item.quality || 'Video'}
+                            </a><br>
+                        `;
+                    });
+
+                    html += `</div>`;
+                    statusDiv.innerHTML = html;
+                } else if (videoData.message || videoData.error) {
+                    statusDiv.innerText = "Error: " + (videoData.message || videoData.error);
+                } else {
+                    statusDiv.innerText = "Video Links සොයාගැනීමට නොහැකි විය.";
+                }
+            })
+            .catch(err => {
+                statusDiv.innerText = "Error එකක් සිදු විය. නැවත උත්සාහ කරන්න.";
+            });
+        });
+    </script>
+</body>
+</html>                let videoData = Array.isArray(data) ? data[0] : data;
 
                 if (videoData && videoData.urls && videoData.urls.length > 0) {
                     let html = `
