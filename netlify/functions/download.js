@@ -1,11 +1,26 @@
 exports.handler = async function(event, context) {
-    if (event.httpMethod !== "POST") {
-        return { statusCode: 405, body: "Method Not Allowed" };
+    const corsHeaders = {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Headers': 'Content-Type',
+        'Access-Control-Allow-Methods': 'POST, OPTIONS',
+        'Content-Type': 'application/json'
+    };
+
+    if (event.httpMethod === 'OPTIONS') {
+        return { statusCode: 200, headers: corsHeaders, body: '' };
+    }
+
+    if (event.httpMethod !== 'POST') {
+        return { statusCode: 405, headers: corsHeaders, body: JSON.stringify({ error: 'Method Not Allowed' }) };
     }
 
     try {
-        const body = JSON.parse(event.body);
+        const body = JSON.parse(event.body || '{}');
         const videoUrl = body.url;
+
+        if (!videoUrl) {
+            return { statusCode: 400, headers: corsHeaders, body: JSON.stringify({ error: 'URL එකක් ලබා දෙන්න' }) };
+        }
 
         const apiUrl = `https://pornhub-downloader-api.p.rapidapi.com/api/pornhub/get?url=${encodeURIComponent(videoUrl)}`;
 
@@ -21,15 +36,14 @@ exports.handler = async function(event, context) {
 
         return {
             statusCode: 200,
-            headers: {
-                "Content-Type": "application/json",
-                "Access-Control-Allow-Origin": "*"
-            },
+            headers: corsHeaders,
             body: JSON.stringify(data)
         };
+
     } catch (error) {
         return {
             statusCode: 500,
+            headers: corsHeaders,
             body: JSON.stringify({ error: error.message })
         };
     }
