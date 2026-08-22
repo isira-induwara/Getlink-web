@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Downloader</title>
+</head>
+<body style="font-family: sans-serif; text-align: center; padding: 20px;">
+
+    <h2>Video Downloader</h2>
+    <input type="text" id="videoUrl" placeholder="Paste Video Link Here..." style="width: 80%; padding: 10px; margin-bottom: 10px;">
+    <br>
+    <button id="downloadBtn" style="padding: 10px 20px; font-weight: bold; background: #ff9900; color: #000; border: none; cursor: pointer; border-radius: 5px;">Get Download Links</button>
+
+    <div id="statusMessage" style="margin-top: 20px;"></div>
+
+    <script>
+        document.getElementById('downloadBtn').addEventListener('click', function() {
+            const videoUrl = document.getElementById('videoUrl').value.trim();
+            const statusDiv = document.getElementById('statusMessage');
+
+            if (!videoUrl) {
+                statusDiv.innerText = "කරුණාකර Link එකක් ඇතුළත් කරන්න!";
+                return;
+            }
+
+            statusDiv.innerText = "Loading... කරුණාකර රැඳී සිටින්න.";
+
+            // Netlify Function එකට Request යැවීම
+            fetch('/.netlify/functions/download', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url: videoUrl })
+            })
+            .then(res => res.json())
+            .then(data => {
+                let videoData = Array.isArray(data) ? data[0] : data;
+
+                if (videoData && videoData.urls && videoData.urls.length > 0) {
+                    let html = `
+                        <div style="margin-top: 20px;">
+                            ${videoData.pictureUrl ? `<img src="${videoData.pictureUrl}" style="max-width:300px; width:100%; border-radius:8px; margin-bottom:10px;" />` : ''}
+                            <h3>${videoData.meta ? videoData.meta.title : 'Video Details'}</h3>
+                            <p>Select Quality:</p>
+                    `;
+
+                    videoData.urls.forEach(item => {
+                        let finalUrl = item.url.startsWith('/') 
+                            ? `https://pornhub-downloader-api.p.rapidapi.com${item.url}` 
+                            : item.url;
+
+                        html += `
+                            <a href="${finalUrl}" target="_blank" style="display:inline-block; margin:5px; padding:10px 15px; background:#ff9900; color:#000; text-decoration:none; font-weight:bold; border-radius:5px;">
+                                Download ${item.quality || item.subName} (${item.extension ? item.extension.toUpperCase() : 'MP4'})
+                            </a><br>
+                        `;
+                    });
+
+                    html += `</div>`;
+                    statusDiv.innerHTML = html;
+                } else {
+                    statusDiv.innerText = "Video Links සොයාගැනීමට නොහැකි විය.";
+                }
+            })
+            .catch(err => {
+                statusDiv.innerText = "Error එකක් ආවා! නැවත උත්සාහ කරන්න.";
+            });
+        });
+    </script>
+</body>
+  </html>
