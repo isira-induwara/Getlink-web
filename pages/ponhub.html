@@ -64,38 +64,4 @@
         });
     </script>
 </body>
-</html>                let videoData = Array.isArray(data) ? data[0] : data;
-
-                if (videoData && videoData.urls && videoData.urls.length > 0) {
-                    let html = `
-                        <div style="margin-top: 20px;">
-                            ${videoData.pictureUrl ? `<img src="${videoData.pictureUrl}" style="max-width:300px; width:100%; border-radius:8px; margin-bottom:10px;" />` : ''}
-                            <h3>${videoData.meta ? videoData.meta.title : 'Video Details'}</h3>
-                            <p>Select Quality:</p>
-                    `;
-
-                    videoData.urls.forEach(item => {
-                        let finalUrl = item.url.startsWith('/') 
-                            ? `https://pornhub-downloader-api.p.rapidapi.com${item.url}` 
-                            : item.url;
-
-                        html += `
-                            <a href="${finalUrl}" target="_blank" style="display:inline-block; margin:5px; padding:10px 15px; background:#ff9900; color:#000; text-decoration:none; font-weight:bold; border-radius:5px;">
-                                Download ${item.quality || item.subName} (${item.extension ? item.extension.toUpperCase() : 'MP4'})
-                            </a><br>
-                        `;
-                    });
-
-                    html += `</div>`;
-                    statusDiv.innerHTML = html;
-                } else {
-                    statusDiv.innerText = "Video Links සොයාගැනීමට නොහැකි විය.";
-                }
-            })
-            .catch(err => {
-                statusDiv.innerText = "Error එකක් ආවා! නැවත උත්සාහ කරන්න.";
-            });
-        });
-    </script>
-</body>
-  </html>
+</html>                
